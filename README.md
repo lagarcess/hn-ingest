@@ -41,6 +41,10 @@ For each item (not a raw dump):
 
 Queue, GraphQL, Kubernetes, auth, ML, managed Postgres, frontend, DigitalOcean resources.
 
+## What we'd do with credits
+
+App Platform stays the compute layer. Durable state would move from the local SQLite file to DigitalOcean Managed Postgres via a `DATABASE_URL` env var; `/ready` would check that DB connection (not implemented here); two App Platform instances would then share the same Postgres so upserts and reads stay consistent across replicas. Docs only — no Postgres, `/ready`, or schema work in this repo.
+
 ## Run locally
 
 Python 3.12+. From the repo root:
