@@ -52,3 +52,36 @@ class Store:
         if row is None:
             return None
         return json.loads(row["data"])
+
+    def all_items(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT data FROM items ORDER BY id").fetchall()
+        return [json.loads(row["data"]) for row in rows]
+
+    def summary(self) -> dict[str, Any]:
+        items = self.all_items()
+        by_type = {"story": 0, "comment": 0, "job": 0, "poll": 0, "unknown": 0}
+        score_buckets = {"none": 0, "low": 0, "mid": 0, "high": 0}
+        domains: dict[str, int] = {}
+        for item in items:
+            item_type = item.get("type")
+            if item_type not in by_type:
+                item_type = "unknown"
+            by_type[item_type] += 1
+            bucket = item.get("score_bucket")
+            if bucket not in score_buckets:
+                bucket = "none"
+            score_buckets[bucket] += 1
+            domain = item.get("domain")
+            if isinstance(domain, str) and domain:
+                domains[domain] = domains.get(domain, 0) + 1
+        top_domains = [
+            {"domain": domain, "count": count}
+            for domain, count in sorted(domains.items(), key=lambda pair: (-pair[1], pair[0]))[:10]
+        ]
+        return {
+            "total": len(items),
+            "by_type": by_type,
+            "top_domains": top_domains,
+            "score_buckets": score_buckets,
+        }

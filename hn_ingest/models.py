@@ -64,3 +64,15 @@ class IngestResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     status: str
+
+
+class DomainCount(BaseModel):
+    domain: str
+    count: int
+
+
+class SummaryResponse(BaseModel):
+    total: int
+    by_type: dict[str, int]
+    top_domains: list[DomainCount]
+    score_buckets: dict[str, int]
