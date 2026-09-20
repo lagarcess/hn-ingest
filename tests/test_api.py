@@ -80,3 +80,28 @@ def test_duplicate_ingest_is_idempotent(client):
 def test_get_missing_item_404(client):
     response = client.get("/items/999999")
     assert response.status_code == 404
+
+
+def test_ingest_stores_derived_process_fields(client):
+    response = client.post("/ingest/items", json=SAMPLE_STORY)
+    assert response.status_code == 200
+    record = client.get("/items/8863").json()
+    assert record["type"] == "story"
+    assert record["domain"] == "getdropbox.com"
+    assert record["time_iso"] == "2007-04-04T19:16:40Z"
+    assert record["score_bucket"] == "mid"
+
+
+def test_ingest_score_buckets_and_unknown_type(client):
+    payload = {
+        "items": [
+            {"id": 10, "type": "pollopt", "score": 10},
+            {"id": 11, "type": "job"},
+            {"id": 12, "type": "story", "score": 200},
+        ]
+    }
+    assert client.post("/ingest/items", json=payload).status_code == 200
+    assert client.get("/items/10").json()["type"] == "unknown"
+    assert client.get("/items/10").json()["score_bucket"] == "low"
+    assert client.get("/items/11").json()["score_bucket"] == "none"
+    assert client.get("/items/12").json()["score_bucket"] == "high"

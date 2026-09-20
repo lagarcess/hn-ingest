@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 
 from hn_ingest.config import load_settings
 from hn_ingest.models import HealthResponse, HNItemIn, IngestRequest, IngestResponse
+from hn_ingest.process import process_item
 from hn_ingest.store import Store
 
 
@@ -45,10 +46,7 @@ def create_app() -> FastAPI:
 
 
 def _to_stored_record(item: HNItemIn) -> dict[str, Any]:
-    data = item.model_dump(exclude_none=False)
-    extras = getattr(item, "model_extra", None) or {}
-    data.update(extras)
-    return data
+    return process_item(item.model_dump())
 
 
 app = create_app()
