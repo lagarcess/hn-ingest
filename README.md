@@ -31,7 +31,11 @@ For each item (not a raw dump):
 - **type**: `story` / `comment` / `job` / `poll` / `unknown`
 - **domain**: host from `url` (`www.` stripped)
 - **time_iso**: Unix `time` → UTC `YYYY-MM-DDTHH:MM:SSZ`
-- **score_bucket**: `none` if score missing; `low` &lt; 50; `mid` &lt; 200; `high` otherwise
+- **score_bucket** (confirmed thresholds):
+  - `none` if `score` is missing
+  - `low` if `score < 50`
+  - `mid` if `score < 200`
+  - `high` otherwise
 
 ## What was skipped (out of scope)
 

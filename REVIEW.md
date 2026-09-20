@@ -31,3 +31,12 @@ Guards stay at HTTP/config boundaries. `process.py` does not import FastAPI, sql
 ## Trunk-based tradeoff
 
 Direct commits to `main` got a runnable, test-covered slice in front of SDET without PR latency. The cost is that a bad push is immediately everyone else's problem: there is no review gate, and revert is the rollback. That is acceptable here because each push was a small, already-green slice (pytest on the agent VM before `git push`), the blast radius is a greenfield service, and the alternative — feature branches plus PR ceremony — was explicitly rejected by the Tech Lead. Keep slices small enough that a revert is cheaper than a discussion; do not grow this habit to changes that need a second pair of eyes (auth, schema breakages, production data).
+
+## ByteByteGo categories
+
+Mapped to this service (Alex Xu / ByteByteGo system-design vocabulary):
+
+- **REST** — resource-shaped HTTP API: `GET /items/{id}`, `GET /summary`, `GET /health`. Writes are `POST` to ingest resources (`/ingest/items`, `/ingest/pull`) that then become addressable items, not RPC-style query verbs on the read path.
+- **HTTP status codes** — 200 for successful and idempotent upserts; 404 when an HN id is not stored; 422 when the HTTP boundary rejects a bad payload or `limit`; 502 when the upstream HN poll cannot be reached. Clients can branch on status without parsing prose.
+- **Polling** — `POST /ingest/pull` is on-demand polling of HN `newstories` plus per-id item fetches. No webhook, queue, or stream. The caller decides cadence; `limit` bounds each poll.
+- **Boundary validation** — Pydantic models and `load_settings()` sit at the HTTP/config edge. Invalid JSON never reaches `process.py` or SQLite. `process.py` stays pure (type / domain / `time_iso` / `score_bucket`) so derived fields are deterministic given a valid item.
